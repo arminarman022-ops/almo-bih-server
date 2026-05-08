@@ -7,13 +7,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Render sam dodjeljuje port, zato koristimo process.env.PORT
 const PORT = process.env.PORT || 3000;
 const GROQ_KEY = process.env.API_KEY;
 
-let stats = { visits: 148230, generated: 5420, likes: 89400 };
+// Statistika (privremena, resetuje se restartom servera)
+let stats = {
+    visits: 148230,
+    generated: 5420,
+    likes: 89400
+};
 
+// Glavna ruta za generisanje teksta preko Groq AI
 app.post('/api/generate', async (req, res) => {
     const { topic, type, lang } = req.body;
+    
     let systemRole = `Ti si Almo BiH Expert AI. Piši isključivo na jeziku: ${lang}. `;
     if(type === 'blog') systemRole += "Piši dugačak, informativan blog sa naslovima.";
     if(type === 'stihovi') systemRole += "Piši emotivne stihove za pjesmu sa [Verse] i [Chorus].";
@@ -28,16 +36,37 @@ app.post('/api/generate', async (req, res) => {
                 { role: "system", content: systemRole },
                 { role: "user", content: topic }
             ]
-        }, { headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" } });
+        }, { 
+            headers: { 
+                "Authorization": `Bearer ${GROQ_KEY}`,
+                "Content-Type": "application/json"
+            } 
+        });
+
         stats.generated++;
         res.json({ text: response.data.choices[0].message.content });
     } catch (e) {
-        res.status(500).json({ error: "Greška na serveru." });
+        console.error("Greška kod AI poziva:", e.response ? e.response.data : e.message);
+        res.status(500).json({ error: "Greška na serveru prilikom komunikacije sa AI." });
     }
 });
 
-app.get('/api/visit', (req, res) => { stats.visits++; res.json(stats); });
-app.post('/api/like', (req, res) => { stats.likes++; res.json({ totalLikes: stats.likes }); });
-app.get('/', (req, res) => { res.send("Almo BiH Server je aktivan!"); });
+// Dodatne rute za sajt
+app.get('/api/visit', (req, res) => {
+    stats.visits++;
+    res.json(stats);
+});
 
-app.listen(PORT, () => console.log(`🚀 Almo BiH Studio online na portu ${PORT}`));
+app.post('/api/like', (req, res) => {
+    stats.likes++;
+    res.json({ totalLikes: stats.likes });
+});
+
+// Testna ruta da vidimo da li server radi
+app.get('/', (req, res) => {
+    res.send("<h1>Almo BiH Studio Server je online!</h1>");
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Almo BiH Studio online na portu ${PORT}`);
+});
