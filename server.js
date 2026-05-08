@@ -7,20 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const GROQ_KEY = process.env.API_KEY;
 
-// PROŠIRENA STATISTIKA
-let stats = {
-    visits: 148230,
-    generated: 5420,
-    likes: 89400
-};
+let stats = { visits: 148230, generated: 5420, likes: 89400 };
 
-// RUTA ZA GENERISANJE NA RAZNIM JEZICIMA
 app.post('/api/generate', async (req, res) => {
     const { topic, type, lang } = req.body;
-    
     let systemRole = `Ti si Almo BiH Expert AI. Piši isključivo na jeziku: ${lang}. `;
     if(type === 'blog') systemRole += "Piši dugačak, informativan blog sa naslovima.";
     if(type === 'stihovi') systemRole += "Piši emotivne stihove za pjesmu sa [Verse] i [Chorus].";
@@ -35,8 +28,7 @@ app.post('/api/generate', async (req, res) => {
                 { role: "system", content: systemRole },
                 { role: "user", content: topic }
             ]
-        }, { headers: { "Authorization": `Bearer ${GROQ_KEY}` } });
-
+        }, { headers: { "Authorization": `Bearer ${GROQ_KEY}`, "Content-Type": "application/json" } });
         stats.generated++;
         res.json({ text: response.data.choices[0].message.content });
     } catch (e) {
@@ -44,16 +36,8 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
-// POVEĆAJ POSJETE
-app.get('/api/visit', (req, res) => {
-    stats.visits++;
-    res.json(stats);
-});
+app.get('/api/visit', (req, res) => { stats.visits++; res.json(stats); });
+app.post('/api/like', (req, res) => { stats.likes++; res.json({ totalLikes: stats.likes }); });
+app.get('/', (req, res) => { res.send("Almo BiH Server je aktivan!"); });
 
-// STVARNI LAJK
-app.post('/api/like', (req, res) => {
-    stats.likes++;
-    res.json({ totalLikes: stats.likes });
-});
-
-app.listen(PORT, () => console.log(`🚀 Almo BiH Studio na portu ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Almo BiH Studio online na portu ${PORT}`));
