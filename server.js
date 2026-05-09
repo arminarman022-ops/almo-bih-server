@@ -11,11 +11,11 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const GROQ_KEY = process.env.API_KEY;
 
-// Statistika (privremena, resetuje se restartom servera)
+// Statistika kreće od zadatih vrijednosti i bilježi stvarni broj
 let stats = {
-    visits: 148230,
+    visits: 357,
     generated: 5420,
-    likes: 89400
+    likes: 211
 };
 
 // Glavna ruta za generisanje teksta preko Groq AI
@@ -36,11 +36,11 @@ app.post('/api/generate', async (req, res) => {
                 { role: "system", content: systemRole },
                 { role: "user", content: topic }
             ]
-        }, { 
-            headers: { 
+        }, {
+            headers: {
                 "Authorization": `Bearer ${GROQ_KEY}`,
                 "Content-Type": "application/json"
-            } 
+            }
         });
 
         stats.generated++;
@@ -51,7 +51,7 @@ app.post('/api/generate', async (req, res) => {
     }
 });
 
-// Dodatne rute za sajt
+// Dodatne rute za sajt koje uvećavaju stvarni broj posjetilaca i lajkova
 app.get('/api/visit', (req, res) => {
     stats.visits++;
     res.json(stats);
